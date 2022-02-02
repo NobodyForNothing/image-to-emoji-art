@@ -1,5 +1,5 @@
 # ABOUT
-This is an python script to convert png and jpg images to scaled versions made out of one-colour emojis. 
+This is an python script to convert png, jpg and gif(output isnt animated :( ) images to scaled versions made out of one-colour emojis. 
 Please note that this was mainly disgned for Discord and can cause Issues like mismatching colours on other pltforms.
 
 
