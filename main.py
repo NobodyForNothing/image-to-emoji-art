@@ -23,11 +23,16 @@ def scale_image(img):
 
 
 def translate_image(img):
+    if input("would you like to add additional emojis? (Yes/no)").upper() in ["YES", "Y", ""]:
+        emoji_level = 1
+    else:
+        emoji_level = 0
+
     discord_image = []
     for row in img:
         discord_row = []
         for pixel in row:
-            discord_pixel = find_discord_match(pixel)
+            discord_pixel = find_discord_match(pixel, emoji_level)
 
             discord_row.append(discord_pixel)
         discord_image.append(discord_row)
@@ -35,12 +40,34 @@ def translate_image(img):
     return discord_image
 
 
-def find_discord_match(rgb_pixel):  # finds  best matching discord emoji for a pixel
-    discordColoursRGB = {'white_large': 'e7e8e8', 'black_large': '31373d', 'orange': 'f4900c', 'blue': '55acee',
-                         'red': 'dd2e44', 'brown': 'c1694f', 'purple': 'aa8dd7', 'green': '77b256', 'yellow': 'fdcb58'}  # format: colour-name, hex-colour
-    best_match = [100, '']  # format: distance, colour name
+def find_discord_match(rgb_pixel, emoji_level):  # finds  best matching discord emoji for a pixel
+    # emoji_level is the amount of different emote sets to use
+    dc_colours_boxes_hex = {
+                         ':white_large_square:' : 'e7e8e8',
+                         ':black_large_square:' : '31373d',
+                         ':orange_square:'      : 'f4900c',
+                         ':blue_square:'        : '55acee',
+                         ':red_square:'         : 'dd2e44',
+                         ':brown_square:'       : 'c1694f',
+                         ':purple_square:'      : 'aa8dd7',
+                         ':green_square:'       : '77b256',
+                         ':yellow_square:'      : 'fdcb58'}  # format: emote-name, hex-colour
+    if emoji_level > 1:
+        dc_colours_others_hex = {
+                         ':united_nations:'     : '5488be',
+                         ':flag_cn:'            : 'bc321c',
+                         ':fog:'                : 'dae2e7',
+                         ':japan:'              : '7fbedf',
+                         ':dollar:'             : '8fa96b',
+                         ':credit_card:'        : '9e7f50',
+                         ':tennis:'             : '7fa46b',
+                         ':window:'             : 'b1bccd'}
+        dc_colours_boxes_hex.update(dc_colours_others_hex)
 
-    for name, hexCode in discordColoursRGB.items():
+    best_match = [100, '']  # format: distance, emoji name
+    # dc_colours_boxes_hex.update(dc_colours_others_hex)  # temp
+
+    for name, hexCode in dc_colours_boxes_hex.items():
         rgbPixelDc = matplotlib.colors.to_rgb('#' + hexCode)  # converts hex to Rgb
 
         rgb_pixel = np.array([rgb_pixel[i] for i in range(3)])  # limit to 3 elements for colour_distance to succeed
@@ -49,14 +76,12 @@ def find_discord_match(rgb_pixel):  # finds  best matching discord emoji for a p
         if best_match[0] > d:
             best_match = [d, name]
 
-    return f':{best_match[1]}_square:'
+    return best_match[1]
 
 
-def colour_distance(rgb1, rgb2):  # used to find bestmatching colour credits to https://stackoverflow.com/a/14097641/15581412
+def colour_distance(rgb1, rgb2):  # bestmatching emoji credits to https://stackoverflow.com/a/14097641/15581412
     rm = 0.5 * (rgb1[0] + rgb2[0])
-    p1 = (2 + rm, 4, 3 - rm)
-    p2 = (rgb1 - rgb2)
-    d = sum(p1 * p2 ** 2) ** 0.5
+    d = sum((2 + rm, 4, 3 - rm) * (rgb1 - rgb2) ** 2) ** 0.5
     return d
 
 
@@ -79,7 +104,6 @@ def format_discord_img(dc_img):  # prints the image
 
 if __name__ == '__main__':
     print('This is a a simple tool to convert jpg and png images to discord chat messages!')
-    print('for this project to work, you need to run \"pip install -r requirements.txt\"')
     in_img = img_input()
     scaled_img = scale_image(in_img)
     discord_img = translate_image(scaled_img)
