@@ -1,8 +1,20 @@
+import os
+
 import imageio
 import matplotlib.colors
 import numpy as np
 from skimage.transform import resize
 import plyer
+import sqlite3
+
+
+def load_discord_representations():
+    database_location = os.getcwd() + '/emoji-colors.sqlite'
+    con = sqlite3.connect(database_location)
+
+    emoji_lvl_1 = {row[0]: row[1] for row in con.execute("SELECT * FROM boxes")}  # format emoji-code, hex-code
+    emoji_lvl_2 = {row[0]: row[1] for row in con.execute("SELECT * FROM additional_colors")}
+    return emoji_lvl_1, emoji_lvl_2
 
 
 def user_input():
@@ -32,45 +44,26 @@ def scale_image(img, x_width):
     return img
 
 
-def translate_image(img, emoji_level):
+def translate_image(img, emoji_level, emoji_lvl_1, emoji_lvl_2):
     discord_image = []
     for row in img:
         discord_row = []
         for pixel in row:
-            discord_pixel = find_discord_match(pixel, emoji_level)
+            discord_pixel = find_discord_match(pixel, emoji_level, emoji_lvl_1, emoji_lvl_2)
             discord_row.append(discord_pixel)
         discord_image.append(discord_row)
 
     return discord_image
 
 
-def find_discord_match(rgb_pixel, e_lvl):  # finds  best matching discord emoji for a pixel
+def find_discord_match(rgb_pixel, e_lvl, emoji_lvl_1, emoji_lvl_2):  # finds  best matching discord emoji for a pixel
     # emoji_level is the amount of different emote sets to use
-    dc_colours_boxes_hex = {
-                         ':white_large_square:' : 'e7e8e8',
-                         ':black_large_square:' : '31373d',
-                         ':orange_square:'      : 'f4900c',
-                         ':blue_square:'        : '55acee',
-                         ':red_square:'         : 'dd2e44',
-                         ':brown_square:'       : 'c1694f',
-                         ':purple_square:'      : 'aa8dd7',
-                         ':green_square:'       : '77b256',
-                         ':yellow_square:'      : 'fdcb58'}  # format: emote-name, hex-colour
     if e_lvl > 1:
-        dc_colours_others_hex = {
-                         ':united_nations:'     : '5488be',
-                         ':flag_cn:'            : 'bc321c',
-                         ':fog:'                : 'dae2e7',
-                         ':japan:'              : '7fbedf',
-                         ':dollar:'             : '8fa96b',
-                         ':credit_card:'        : '9e7f50',
-                         ':tennis:'             : '7fa46b',
-                         ':window:'             : 'b1bccd'}
-        dc_colours_boxes_hex.update(dc_colours_others_hex)
+        emoji_lvl_1.update(emoji_lvl_2)
 
     best_match = [100, '']  # format: distance, emoji name
 
-    for name, hexCode in dc_colours_boxes_hex.items():
+    for name, hexCode in emoji_lvl_1.items():
         rgbPixelDc = np.array(matplotlib.colors.to_rgb('#' + hexCode))  # converts hex to Rgb
         rgb_pixel = np.array([rgb_pixel[i] for i in range(3)])  # limit to 3 elements
         d = colour_distance(rgb_pixel, rgbPixelDc)
@@ -97,10 +90,10 @@ def format_discord_img(dc_img):  # prints the image
     print(r)
 
 
-
 if __name__ == '__main__':
+    emoji_lvl_1, emoji_lvl_2 = load_discord_representations()
     print('This is a a simple tool to convert jpg and png images to discord chat messages!')
     in_img, x_with, usr_emoji_level = user_input()
     scaled_img = scale_image(in_img, x_with)
-    discord_img = translate_image(scaled_img, usr_emoji_level)
+    discord_img = translate_image(scaled_img, usr_emoji_level, emoji_lvl_1, emoji_lvl_2)
     format_discord_img(discord_img)
