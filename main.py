@@ -1,11 +1,21 @@
 import os
-
+import sys
 import imageio
 import matplotlib.colors
 import numpy as np
 from skimage.transform import resize
 import plyer
 import sqlite3
+
+
+def load_command_line_args(arg_amount):
+    arg_amount += 1
+    all_args = sys.argv
+    if len(all_args) >= arg_amount:
+        return_args = [all_args[i] for i in range(1, arg_amount)]
+        print(return_args)  # temp
+        return return_args
+    return False
 
 
 def load_discord_representations():
@@ -81,7 +91,6 @@ def colour_distance(rgb1, rgb2):  # best matching emoji credits to https://stack
 
 
 def format_discord_img(dc_img):  # prints the image
-    print("\n\ncopy discord image below:\n")
     r = ""
     for row in dc_img:
         for emote in row:
@@ -90,10 +99,21 @@ def format_discord_img(dc_img):  # prints the image
     print(r)
 
 
-if __name__ == '__main__':
+def main():
     emoji_lvl_1, emoji_lvl_2 = load_discord_representations()
-    print('This is a a simple tool to convert jpg and png images to discord chat messages!')
-    in_img, x_with, usr_emoji_level = user_input()
+    args = load_command_line_args(3)  # TODO: add option to insert what to use here
+    if not args:
+        print('This is a a simple tool to convert jpg, gif and png images to discord chat messages!')
+        in_img, x_with, usr_emoji_level = user_input()
+        print("\n\ncopy discord image below:\n")
+    else:
+        in_img, x_with, usr_emoji_level = args[0], args[1], args[2]
+        in_img = imageio.imread(in_img)  # not working
+
     scaled_img = scale_image(in_img, x_with)
     discord_img = translate_image(scaled_img, usr_emoji_level, emoji_lvl_1, emoji_lvl_2)
     format_discord_img(discord_img)
+
+
+if __name__ == '__main__':
+    main()
